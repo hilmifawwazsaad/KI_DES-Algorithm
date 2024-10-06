@@ -14,10 +14,10 @@
 # Hexadecimal to Binary Conversion and Binary to Hexadecimal Conversion
 def convert_hexbin(s, direction="hex2bin"):
        map_hexbin = {
-       '0': "0000", '1': "0001", '2': "0010", '3': "0011",
-       '4': "0100", '5': "0101", '6': "0110", '7': "0111",
-       '8': "1000", '9': "1001", 'A': "1010", 'B': "1011",
-       'C': "1100", 'D': "1101", 'E': "1110", 'F': "1111"
+              '0': "0000", '1': "0001", '2': "0010", '3': "0011",
+              '4': "0100", '5': "0101", '6': "0110", '7': "0111",
+              '8': "1000", '9': "1001", 'A': "1010", 'B': "1011",
+              'C': "1100", 'D': "1101", 'E': "1110", 'F': "1111"
        }
        map_binhex = {v:k for k,v in map_hexbin.items()}
        
@@ -27,8 +27,8 @@ def convert_hexbin(s, direction="hex2bin"):
               for i in s:
                      result = result + map_hexbin[i]
        elif direction == "bin2hex":
-              for i in s:
-                     result = result + map_binhex[i]
+              for i in range(0, len(s), 4):
+                     result = result + map_binhex[s[i:i+4]]
        return result
 
 def convert_bindec(s, direction="bin2dec"):
@@ -94,8 +94,6 @@ def key_schedule(bin_key):
               left = left[shift:] + left[:shift]
               right = right[shift:] + right[:shift]
               round_key = left + right
-              print(f"Debug: Key for round {round_number + 1}: {round_key[:48]}")
-
               round_keys.append(round_key[:48]) 
 
        return round_keys
@@ -106,10 +104,12 @@ def sbox_substitution(right_xor):
               row = int(right_xor[j] + right_xor[j + 5], 2)
               col = int(right_xor[j + 1:j + 5], 2)
               sbox_value = s_box[j // 6][row][col]
-              print(f"Debug: S-box output for block {j // 6}: {sbox_value}")
               substituted += format(sbox_value, '04b')
        return substituted
-       
+
+def string_to_hex(plaintext):
+       return ''.join([format(ord(c), '02X') for c in plaintext])
+
 # Initializing the Initial Permutation Table (IP)
 init_perm = [58, 50, 42, 34, 26, 18, 10, 2,
               60, 52, 44, 36, 28, 20, 12, 4,
@@ -190,94 +190,70 @@ final_perm = [40, 8, 48, 16, 56, 24, 64, 32,
               33, 1, 41, 9, 49, 17, 57, 25]
 
 def des_encrypt(plaintext, key):
-       if len(key) != 8:
-              raise ValueError("Key harus 8 karakter")
+       bin_key = convert_hexbin(key, "hex2bin")
+       bin_plaintext = convert_hexbin(plaintext, "hex2bin")
        
-       plaintext = pad_plaintext(plaintext)
-       bin_plaintext = ''.join(format(ord(x), '08b') for x in plaintext)
-       bin_key = ''.join(format(ord(x), '08b') for x in key)
-
-       permuted_plaintext = permute(bin_plaintext, init_perm, 64)
-
-       left = permuted_plaintext[:32]
-       right = permuted_plaintext[32:]
-
        round_keys = key_schedule(bin_key)
-
+       initial_permuted = permute(bin_plaintext, init_perm, 64)
+       
+       left = initial_permuted[:32]
+       right = initial_permuted[32:]
+       
        for i in range(16):
-              right_expanded = permute(right, e_box, 48)
-              right_xor = xor(right_expanded, round_keys[i])
+              expanded_right = permute(right, e_box, 48)
+              right_xor = xor(expanded_right, round_keys[i])
               substituted = sbox_substitution(right_xor)
-              permuted_substituted = permute(substituted, p_box, 32)
-              left, right = right, xor(left, permuted_substituted)
-       combined = left + right
-       cipher_text_bin = permute(combined, final_perm, 64)
-       cipher_text_hex = hex(int(cipher_text_bin, 2))[2:].upper()
+              permuted_right = permute(substituted, p_box, 32)
+              new_right = xor(left, permuted_right)
+              left = right
+              right = new_right
+              
+       combined = right + left
+       
+       encrypted_bin = permute(combined, final_perm, 64)
+       encrypted_text = convert_hexbin(encrypted_bin, "bin2hex")
+       
+       return encrypted_text
 
-       return cipher_text_hex
-
-
-# DES decryption with additional debug output
 def des_decrypt(ciphertext, key):
-       if len(key) != 8:
-              raise ValueError("Key harus 8 karakter")
+       bin_key = convert_hexbin(key, "hex2bin")
+       bin_ciphertext = convert_hexbin(ciphertext, "hex2bin")
        
-       bin_ciphertext = bin(int(ciphertext, 16))[2:].zfill(64)
-       bin_key = ''.join(format(ord(x), '08b') for x in key)
-
-       permuted_ciphertext = permute(bin_ciphertext, init_perm, 64)
-       print("Debug: After initial permutation:", permuted_ciphertext)
-
-       left = permuted_ciphertext[:32]
-       right = permuted_ciphertext[32:]
-       print("Debug: Initial left and right:", left, right)
-
        round_keys = key_schedule(bin_key)
-       print("Debug: Generated round keys")
-
-       round_keys.reverse()
+       initial_permuted = permute(bin_ciphertext, init_perm, 64)
        
-       for i in range(16):
-              right_expanded = permute(right, e_box, 48)
-              print(f"Debug: Round {16-i}, right expanded:", right_expanded)
-              right_xor = xor(right_expanded, round_keys[i])
-              print(f"Debug: Round {16-i}, right XOR:", right_xor)
+       left = initial_permuted[:32]
+       right = initial_permuted[32:]
+       
+       for i in range(15, -1, -1):
+              expanded_right = permute(right, e_box, 48)
+              right_xor = xor(expanded_right, round_keys[i])
               substituted = sbox_substitution(right_xor)
-              print(f"Debug: Round {16-i}, after S-box:", substituted)
-              permuted_substituted = permute(substituted, p_box, 32)
-              print(f"Debug: Round {16-i}, after P-box:", permuted_substituted)
-              left, right = right, xor(left, permuted_substituted)
-              print(f"Debug: Round {16-i}, new left and right:", left, right)
-
-       combined = left + right
-       print("Debug: Combined left and right before final permutation:", combined)
-       plain_text_bin = permute(combined, final_perm, 64)
-       print("Debug: After final permutation (plain text in binary):", plain_text_bin)
-       plain_text = ''
-       for i in range(0, 64, 8):
-              byte = plain_text_bin[i:i + 8]
-              char = chr(int(byte, 2))
-              print(f"Binary segment {i//8}: {byte} -> ASCII: {char}")
-              plain_text += char
-
-       print("Debug: Decrypted binary before removing padding:", plain_text)
-       try:
-              return remove_padding(plain_text)
-       except ValueError:
-              print("Padding error detected, returning unpadded text.")
-              return plain_text
+              permuted_right = permute(substituted, p_box, 32)
+              new_right = xor(left, permuted_right)
+              left = right
+              right = new_right
+              
+       combined = right + left
+       
+       decrypted_bin = permute(combined, final_perm, 64)
+       decrypted_text = convert_hexbin(decrypted_bin, "bin2hex")
+       return decrypted_text
 
 # Main function to test encryption and decryption
 if __name__ == "__main__":
-       plaintext = "ABCDEFGH"
-       key = "12345678"
-
+       plaintext = "HilmiFsZ"
+       key = "C3F20E95A1B4786D"
+       
+       hex_plaintext = string_to_hex(plaintext)
+       
        print("Plaintext:", plaintext)
+       print("Hexadecimal Plaintext:", hex_plaintext)
        print("Key:", key)
-
-       encrypt = des_encrypt(plaintext, key)
+       
+       encrypt = des_encrypt(hex_plaintext, key)
        print("Encrypted Text:", encrypt)
-
+       
        decrypt = des_decrypt(encrypt, key)
-       print("Decrypted Text:", decrypt)
+       print("Decrypted Text (in hex):", decrypt)
 
