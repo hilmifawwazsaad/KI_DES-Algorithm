@@ -110,6 +110,9 @@ def sbox_substitution(right_xor):
 def string_to_hex(plaintext):
        return ''.join([format(ord(c), '02X') for c in plaintext])
 
+def hex_to_string(hex_text):
+       return bytes.fromhex(hex_text).decode('utf-8')
+
 # Initializing the Initial Permutation Table (IP)
 init_perm = [58, 50, 42, 34, 26, 18, 10, 2,
               60, 52, 44, 36, 28, 20, 12, 4,
@@ -256,4 +259,5 @@ if __name__ == "__main__":
        
        decrypt = des_decrypt(encrypt, key)
        print("Decrypted Text (in hex):", decrypt)
+       print("Decrypted Text:", hex_to_string(decrypt))
 
