@@ -56,14 +56,7 @@ def xor(x, y):
         return ''.join('0' if x == y else '1' for x, y in zip(x, y))
 
 def shift_left(k, shifts):
-        s = ""
-        for i in range(shifts):
-                for j in range(1, len(k)):
-                        s = s + k[j]
-                s = s + k[0]
-                k = s
-                s = ""
-        return k
+        return k[shifts:] + k[:shifts]
 
 def encrypt_ecb(plaintext, key):
         ciphertext = ""
@@ -220,8 +213,8 @@ def encrypt():
         
         client_socket, addr = socket_server.accept()
         print("Koneksi dari", addr)
-        key = '1010101010101010101010101010'
-
+        key = '00010011001101000101011101111001100110111011110011011111111100'
+        print("Key: ", key)
         # bin_key = convert_hexbin(key, "hex2bin").zfill(64)
         key = permute(key, keyp, 56)
         left = key[:28]

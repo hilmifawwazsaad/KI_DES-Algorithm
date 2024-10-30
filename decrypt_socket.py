@@ -219,8 +219,8 @@ def decrypt():
         client_socket.connect((host, port))
 
         print("Terhubung dengan server", host, "pada port", port)
-        key = '1010101010101010101010101010'
-
+        key = '00010011001101000101011101111001100110111011110011011111111100'
+        print("Key: ", key)
         # bin_key = convert_hexbin(key, "hex2bin").zfill(64)
         key = permute(key, keyp, 56)
         left = key[0:28]
