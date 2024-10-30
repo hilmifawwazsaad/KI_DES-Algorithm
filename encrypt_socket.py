@@ -65,6 +65,17 @@ def shift_left(k, shifts):
                 s = ""
         return k
 
+def encrypt_ecb(plaintext, key):
+        ciphertext = ""
+
+        for i in range(0, len(plaintext), 16):
+                block = plaintext[i:i+16].ljust(16, '0')
+                encrypt_block = des_encrypt(block, key)
+
+                ciphertext += encrypt_block
+
+        return ciphertext  
+
 # Initializing the Initial Permutation Table (IP)
 init_perm = [58, 50, 42, 34, 26, 18, 10, 2,
             60, 52, 44, 36, 28, 20, 12, 4,
@@ -224,11 +235,13 @@ def encrypt():
                 round_key = permute(combine_string, key_comp, 48)
                 round_keys.append(round_key)
         
-        plaintext = 'HilmiFsZGantengBanget'
+        #plaintext = 'HilmiFsZGantengBangetAsikk'
+        plaintext = input("Masukkan plaintext: ")
         plaintext_hex = string_to_hex(plaintext)
         # plaintext_bin = convert_hexbin(plaintext_hex, "hex2bin")
         # chipertext = des_encrypt(plaintext_hex, round_keys)
-        chipertext = convert_hexbin(des_encrypt(plaintext_hex, round_keys), "bin2hex")
+        # chipertext = convert_hexbin(des_encrypt(plaintext_hex, round_keys), "bin2hex")
+        chipertext = convert_hexbin(encrypt_ecb(plaintext_hex, round_keys), "bin2hex")
         print("Plaintext: ", plaintext)
         print("Chipertext yang dikirim ke client: ", chipertext)
 

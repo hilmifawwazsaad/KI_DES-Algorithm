@@ -9,7 +9,12 @@ Program for DES algorithm using Python Information Security class
 
 ### Pembagian Kerja
 #### Amanda Illona Farrel
-1.
+1. Menerapkan fungsi ecb
+2. Membuat unlimited input string
+3. Mengubah bentuk input dari hard code menjadi input user
 
 #### Hilmi Fawwaz Sa'ad
-1.
+1. Membuat repo
+2. Membuat algoritma DES
+3. Membuat socket
+4. Fix issue encrpyt dan decrypt

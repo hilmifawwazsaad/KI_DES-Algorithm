@@ -65,6 +65,16 @@ def shift_left(k, shifts):
                 s = ""
         return k
 
+def decrypt_ecb(ciphertext, key):
+        plaintext = ""
+
+        for i in range(0, len(ciphertext), 16):
+                block = ciphertext[i:i+16]
+                decrypt_block = des_decrypt(block, key)
+                plaintext = plaintext + decrypt_block
+        
+        return plaintext
+
 # Initializing the Initial Permutation Table (IP)
 init_perm = [58, 50, 42, 34, 26, 18, 10, 2,
                 60, 52, 44, 36, 28, 20, 12, 4,
@@ -226,7 +236,8 @@ def decrypt():
 
         ciphertext = client_socket.recv(1024).decode()
         # decrypted_text = des_decrypt(ciphertext, round_keys_decrypt)
-        decrypted_text = convert_hexbin(des_decrypt(ciphertext, round_keys_decrypt), "bin2hex")
+        # decrypted_text = convert_hexbin(des_decrypt(ciphertext, round_keys_decrypt), "bin2hex")
+        decrypted_text = convert_hexbin(decrypt_ecb(ciphertext, round_keys_decrypt), "bin2hex")
         plaintext = hex_to_string(decrypted_text)
         print("Ciphertext yang diterima:", ciphertext)
         if decrypted_text:
